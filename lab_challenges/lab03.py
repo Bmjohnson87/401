@@ -1,49 +1,57 @@
-
-# Script:         Ops 401 Class 3 Demo
-# Purpose:        Send an Email Message
-# Why:            Prep for Ops Challenge
-
-
+import os
+import time
+from datetime import datetime
+import platform
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
-def send_email(sender_email, sender_password, receiver_email, subject, body):
-    # Set up the MIME
-    message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = receiver_email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
+def ping(host):
+   """
+   Sends a single ICMP ping to a host and returns True for success, False for failure.
+   """
+   # Use the appropriate ping command based on the operating system
+   if platform.system().lower() == "windows":
+       ping_command = f"ping -n 1 {host}"
+   else:
+       ping_command = f"ping -c 1 {host}"
 
-    # Connect to the SMTP server and send the email
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_email, message.as_string())
+   response = os.system(ping_command)
+   return response == 0  # True if ping succeeded, False otherwise
 
-def exit(message='Thank You For Using My Script'):
-    print(message)
-    sys.exit()
+def send_email_notification(email_address, email_password, subject, message):
+   """
+   Sends an email notification using the provided credentials.
+   """
+   msg = MIMEText(message)
+   msg['Subject'] = subject
+   msg['From'] = email_address
+   msg['To'] = email_address  # Send to the same address for simplicity
+
+   with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+       server.login(email_address, email_password)
+       server.send_message(msg)
+
+def uptime_sensor(ip_address, email_address, email_password):
+   """
+   Continuously monitors the uptime of a host and sends email notifications when status changes.
+   """
+   previous_status = None
+
+   while True:
+       timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+       status = "Success" if ping(ip_address) else "Failure"
+
+       if status != previous_status:
+           subject = f"Host Status Change: {ip_address}"
+           message = f"Host {ip_address} status changed from {previous_status} to {status} at {timestamp}."
+           send_email_notification(email_address, email_password, subject, message)
+
+       print(f"{timestamp} - {ip_address}: {status}")
+       previous_status = status
+       time.sleep(2)
 
 if __name__ == "__main__":
-    try:
-        # Get user email and password for notifications
-        sender_email = input("Enter your email address: ")
-        if not sender_email:
-            sender_email = 'youremail.com'
-        sender_password = input("Enter your email password (App Password for Gmail): ")
-        if not sender_password:
-            sender_password = "yourpassword from the app in gmail (not login passowrd))"
-        receiver_email = input("Enter the administrator's email address: ")
-
-        # Compose the email
-        subject = "Test Notification"
-        body = "This is a test email notification from your Python script."
-
-        # Send the email notification
-        send_email(sender_email, sender_password, receiver_email, subject, body)
-
-        print("Email sent successfully.")
-    except KeyboardInterrupt:
-        exit("\nExiting the script")
+   ip_to_monitor = input("Enter the IP address to monitor: ")
+   email_address = input("Enter your email address for notifications: ")
+   email_password = input("Enter your email password: ")
+   uptime_sensor(ip_to_monitor, email_address, email_password)
