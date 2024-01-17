@@ -1,3 +1,6 @@
+# Bard
+# chat gpt
+# classmates
 import os
 from cryptography.fernet import Fernet
 
