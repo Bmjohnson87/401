@@ -1,3 +1,5 @@
+# used bard to help understand
+
 
 # help from Edwin Pretel
 #  Imports the os module for interacting with the operating system
