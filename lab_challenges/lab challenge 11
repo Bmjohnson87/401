@@ -1,9 +1,11 @@
+#used bard and chat gpt 
 from scapy.all import *
 
 # Define host IP and port range
-host_ip = "192.168.1.100"  # Replace with the target IP address
-port_range = range(20, 81)  # Scan ports 20 to 80
+host_ip = "192.168.0.171"  
 
+# Scan ports 20 to 80
+port_range = range(20, 81) 
 # Function to scan a single port
 def scan_port(port):
     packet = IP(dst=host_ip) / TCP(dport=port, flags="S")
@@ -12,7 +14,8 @@ def scan_port(port):
     if response is None:
         print(f"Port {port} is filtered (silently dropped).")
     elif response[TCP].flags == 0x12:
-        send_rst(response[IP].src, response[TCP].sport)  # Send RST packet to close connection
+         # Send RST packet to close connection
+        send_rst(response[IP].src, response[TCP].sport)  
         print(f"Port {port} is open.")
     elif response[TCP].flags == 0x14:
         print(f"Port {port} is closed.")
