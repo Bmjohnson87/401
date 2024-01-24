@@ -1,75 +1,79 @@
+#!/usr/bin/env python3
 # Bard
 # chat gpt
-# classmates
-import os
+# classmates Tommy Taylor
 from cryptography.fernet import Fernet
+import os
 
-def encrypt_file(filepath):
-   key = Fernet.generate_key()
-   fernet = Fernet(key)
+def generate_key():
+    key = Fernet.generate_key()
+    with open('key.key', 'wb') as key_file:
+        key_file.write(key)
+    return key
 
-   with open(filepath, "rb") as file:
-       original_data = file.read()
+def load_key():
+    return open('key.key', 'rb').read()
 
-   encrypted_data = fernet.encrypt(original_data)
+def encrypt_file(filepath, key):
+    try:
+        with open(filepath, 'rb') as file:
+            file_data = file.read()
+        encrypted_data = Fernet(key).encrypt(file_data)
+        with open(filepath, 'wb') as file:
+            file.write(encrypted_data)
+    except Exception as e:
+        print(f"Error encrypting file: {e}")
 
-   with open(filepath, "wb") as file:
-       file.write(encrypted_data)
+def decrypt_file(filepath, key):
+    try:
+        with open(filepath, 'rb') as file:
+            encrypted_data = file.read()
+        decrypted_data = Fernet(key).decrypt(encrypted_data)
+        with open(filepath, 'wb') as file:
+            file.write(decrypted_data)
+    except Exception as e:
+        print(f"Error decrypting file: {e}")
 
-   os.remove(filepath + ".enc")  # Remove any existing encrypted file
-   os.rename(filepath, filepath + ".enc")  # Rename the encrypted file
+def encrypt_message(message, key):
+    try:
+        return Fernet(key).encrypt(message.encode())
+    except Exception as e:
+        print(f"Error encrypting message: {e}")
 
-   print("File encrypted successfully!")
-   print("Key:", key.decode())  # Display the key for decryption
+def decrypt_message(encrypted_message, key):
+    try:
+        # Convert the string representation of bytes back to bytes
+        encrypted_message_bytes = encrypted_message.encode().decode('unicode_escape').encode('ISO-8859-1')
+        return Fernet(key).decrypt(encrypted_message_bytes).decode()
+    except Exception as e:
+        print(f"Error decrypting message: {e}")
 
-def decrypt_file(filepath):
-   with open(filepath, "rb") as file:
-       encrypted_data = file.read()
+def main():
+    print("Choose a mode:\n1. Encrypt a file\n2. Decrypt a file\n3. Encrypt a message\n4. Decrypt a message")
+    choice = input("Enter your choice (1/2/3/4): ")
 
-   key = input("Enter the key: ").encode()
-   fernet = Fernet(key)
+    if choice in ['1', '3']:
+        key = generate_key()  # Generate a new key for encryption
+    elif choice in ['2', '4']:
+        key = load_key()  # Load the existing key for decryption
 
-   try:
-       decrypted_data = fernet.decrypt(encrypted_data)
+    if choice in ['1', '2']:
+        filepath = input("Enter the file path: ")
+        if choice == '1':
+            encrypt_file(filepath, key)
+            print("File encrypted successfully.")
+        elif choice == '2':
+            decrypt_file(filepath, key)
+            print("File decrypted successfully.")
 
-       with open(filepath[:-4], "wb") as file:  # Remove ".enc" extension
-           file.write(decrypted_data)
-
-       os.remove(filepath)  # Remove the encrypted file
-       print("File decrypted successfully!")
-   except InvalidToken as e:
-       print("Invalid key or file format.")
-
-def encrypt_message(message):
-   key = Fernet.generate_key()
-   fernet = Fernet(key)
-   encrypted_message = fernet.encrypt(message.encode())
-   print("Encrypted message:", encrypted_message.decode())
-   print("Key:", key.decode())
-
-def decrypt_message(message):
-   key = input("Enter the key: ").encode()
-   fernet = Fernet(key)
-   try:
-       decrypted_message = fernet.decrypt(message.encode()).decode()
-       print("Decrypted message:", decrypted_message)
-   except InvalidToken as e:
-       print("Invalid key or message format.")
+    elif choice in ['3', '4']:
+        if choice == '3':
+            message = input("Enter the message to encrypt: ")
+            encrypted_message = encrypt_message(message, key)
+            print(f"Encrypted message: {encrypted_message}")
+        elif choice == '4':
+            encrypted_message = input("Enter the encrypted message to decrypt (without b' and '): ")
+            print("Decrypted message:", decrypt_message(encrypted_message, key))
 
 if __name__ == "__main__":
-   mode = int(input("Select mode:\n1. Encrypt file\n2. Decrypt file\n3. Encrypt message\n4. Decrypt message\nEnter your choice: "))
-
-   if mode == 1:
-       filepath = input("Enter the file path: ")
-       encrypt_file(filepath)
-   elif mode == 2:
-       filepath = input("Enter the encrypted file path: ")
-       decrypt_file(filepath)
-   elif mode == 3:
-       message = input("Enter the message to encrypt: ")
-       encrypt_message(message)
-   elif mode == 4:
-       message = input("Enter the encrypted message: ")
-       decrypt_message(message)
-   else:
-       print("Invalid mode.")
+    main()
