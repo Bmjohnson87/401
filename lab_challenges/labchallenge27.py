@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 
+# collaborated with Tommy Taylor
 # chat gpt for ubdertanding
 # Imports the necessary modules
 from cryptography.fernet import Fernet
